@@ -2,6 +2,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,11 +73,21 @@ public class UserView extends JFrame {
         gbc.gridx = 2; gbc.gridy = 1; gbc.weightx = 0.2;
         actionPanel.add(postTweetButton, gbc);
 
+        // Creation and Last Update Time Labels
+        JPanel timePanel = new JPanel();
+        timePanel.setLayout(new BoxLayout(timePanel, BoxLayout.Y_AXIS));
+        JLabel creationTimeLabel = new JLabel("Creation Time: " + new Date(user.getCreationTime()));
+        JLabel lastUpdateTimeLabel = new JLabel("Last Update Time: " + new Date(user.getUpdatedAt()));
+        timePanel.add(creationTimeLabel);
+        timePanel.add(lastUpdateTimeLabel);
+
         // Add components to the frame
         add(followingsPane, BorderLayout.WEST);
         add(followersPane, BorderLayout.EAST);
         add(newsFeedPane, BorderLayout.CENTER);
         add(actionPanel, BorderLayout.SOUTH);
+        add(timePanel, BorderLayout.NORTH);
+
 
         // Action listeners
         followUserButton.addActionListener(new ActionListener() {
@@ -100,6 +111,7 @@ public class UserView extends JFrame {
                 String message = tweetField.getText();
                 user.postTweet(message);
                 refreshNewsFeed();
+                lastUpdateTimeLabel.setText("Last Update Time: " + new Date(user.getUpdatedAt()));
             }
         });
 

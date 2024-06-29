@@ -1,14 +1,12 @@
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
 
 public class AdminControlPanel extends JFrame {
@@ -19,7 +17,7 @@ public class AdminControlPanel extends JFrame {
     private Map<String, User> users;
     private Map<String, UserGroup> groups;
 
-    private static final List<String> POSITIVE_WORDS = Arrays.asList("vibing", "chilling", "lit", "sick af","good", "great", "excellent", "awesome", "fantastic", "amazing");
+    private static final List<String> POSITIVE_WORDS = Arrays.asList("vibing", "chilling", "lit", "sick af", "good", "great", "excellent", "awesome", "fantastic", "amazing");
 
     // Method to count total tweets
     private int getTotalTweets() {
@@ -76,6 +74,7 @@ public class AdminControlPanel extends JFrame {
         rootNode = new DefaultMutableTreeNode("Root");
         treeModel = new DefaultTreeModel(rootNode);
         treeView = new JTree(treeModel);
+        treeView.setCellRenderer(new CustomTreeCellRenderer()); // Set custom renderer
         JScrollPane treeViewPane = new JScrollPane(treeView);
 
         // Control Panel
@@ -89,6 +88,8 @@ public class AdminControlPanel extends JFrame {
         JButton showTotalTweetsButton = new JButton("Show Total Tweets");
         JButton showUserViewButton = new JButton("Show User View");
         JButton feedAnalysisButton = new JButton("Analyze Feed");
+        JButton verificationButton = new JButton("Verify");
+        JButton lastUpdatedUserButton = new JButton("Last Updated User");
 
         controlPanel.add(addUserButton);
         controlPanel.add(addGroupButton);
@@ -99,17 +100,34 @@ public class AdminControlPanel extends JFrame {
         controlPanel.add(showTotalTweetsButton);
         controlPanel.add(showUserViewButton);
         controlPanel.add(feedAnalysisButton);
+        controlPanel.add(verificationButton);
+        controlPanel.add(lastUpdatedUserButton);
 
         // Add components to the frame
         add(treeViewPane, BorderLayout.CENTER);
         add(controlPanel, BorderLayout.SOUTH);
 
         // Action listeners for buttons
+        lastUpdatedUserButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String lastUpdatedUser = getLastUpdatedUser();
+                JOptionPane.showMessageDialog(AdminControlPanel.this, "Last Updated User: " + lastUpdatedUser);
+            }
+        });
+
+        verificationButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                validateID();
+            }
+        });
+
         addUserButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String userID = JOptionPane.showInputDialog("Enter User ID:");
-                
+
                 if (userID != null && !userID.trim().isEmpty() && !users.containsKey(userID)) {
                     User user = new User(userID);
                     users.put(userID, user);
@@ -192,7 +210,6 @@ public class AdminControlPanel extends JFrame {
             }
         });
 
-
         showTotalUsersButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -244,11 +261,17 @@ public class AdminControlPanel extends JFrame {
         return instance;
     }
 
+    private String getLastUpdatedUser() {
+        return users.values().stream()
+                .max(Comparator.comparingLong(User::getUpdatedAt))
+                .map(User::getUserID).orElse(null);
+    }
+
     private DefaultMutableTreeNode findNode(DefaultMutableTreeNode rootNode, String id) {
         Enumeration<TreeNode> enumeration = rootNode.depthFirstEnumeration();
         while (enumeration.hasMoreElements()) {
             DefaultMutableTreeNode currentNode = (DefaultMutableTreeNode) enumeration.nextElement();
-            if(id.equals(currentNode.getUserObject().toString())) {
+            if (id.equals(currentNode.getUserObject().toString())) {
                 return currentNode;
             }
         }
@@ -267,8 +290,67 @@ public class AdminControlPanel extends JFrame {
             }
         }
     }
+
+    private void validateID() {
+        StringBuilder result = new StringBuilder();
+        boolean valid = true;
+
+        for (String userID : users.keySet()) {
+            if (userID.contains(" ")) {
+                result.append(userID).append(" User ID contains whitespace");
+                valid = false;
+            }
+        }
+
+        for (String groupID : groups.keySet()) {
+            if (groupID.contains(" ")) {
+                result.append(groupID).append(" Group ID contains whitespace");
+                valid = false;
+            }
+        }
+
+        if (valid) {
+            result.append("All userID and groupID are valid");
+        }
+
+        JOptionPane.showMessageDialog(this, result.toString(), "ID Validation", JOptionPane.INFORMATION_MESSAGE);
+    }
+
     public User findUserByID(String userID) {
         return users.get(userID);
+    }
+
+    // Inner class for custom tree cell renderer
+    private class CustomTreeCellRenderer extends DefaultTreeCellRenderer {
+
+        private Icon userIcon;
+        private Icon groupIcon;
+
+        public CustomTreeCellRenderer() {
+            // Load icons from resources
+            userIcon = new ImageIcon(getClass().getResource("icon/user.png"));
+            groupIcon = new ImageIcon(getClass().getResource("icon/users.png"));
+        }
+
+        @Override
+        public Component getTreeCellRendererComponent(JTree tree, Object value,
+                                                      boolean sel, boolean expanded, boolean leaf, int row, boolean hasFocus) {
+            super.getTreeCellRendererComponent(tree, value, sel, expanded, leaf, row, hasFocus);
+
+            if (value instanceof DefaultMutableTreeNode) {
+                DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
+                Object nodeObject = node.getUserObject();
+                if (nodeObject != null) {
+                    if (users.containsKey(nodeObject.toString())) {
+                        setIcon(userIcon);
+                    } else if (groups.containsKey(nodeObject.toString())) {
+                        setIcon(groupIcon);
+                    }
+                }
+            }
+
+            return this;
+        }
     }
 
     public static void main(String[] args) {

@@ -7,6 +7,8 @@ public class User {
     private List<User> followings;
     private List<String> ownTweets;
     private List<String> newsFeed;
+    private long createdAt;
+    private long updatedAt;
 
     public User(String userID) {
         this.userID = userID;
@@ -14,10 +16,20 @@ public class User {
         this.followings = new ArrayList<>();
         this.ownTweets = new ArrayList<>();
         this.newsFeed = new ArrayList<>();
+        this.createdAt = System.currentTimeMillis();
+        this.updatedAt = createdAt;
     }
 
     public String getUserID() {
         return userID;
+    }
+
+    public long getCreationTime() {
+        return createdAt;
+    }
+
+    public long getUpdatedAt() {
+        return updatedAt;
     }
 
     public List<User> getFollowers() {
@@ -55,6 +67,7 @@ public class User {
         ownTweets.add(formattedMessage);
         updateNewsFeed();
         notifyFollowers(formattedMessage);
+        updatedAt = System.currentTimeMillis();
     }
 
     private void notifyFollowers(String message) {
@@ -72,4 +85,5 @@ public class User {
             newsFeed.addAll(following.getOwnTweets());
         }
     }
+
 }
